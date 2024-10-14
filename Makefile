@@ -124,8 +124,6 @@ src/mini-gdbstub/Makefile:
 GDBSTUB_LIB := $(GDBSTUB_OUT)/libgdbstub.a
 $(GDBSTUB_LIB): src/mini-gdbstub/Makefile
 	$(MAKE) -C $(dir $<) O=$(dir $@)
-# FIXME: track gdbstub dependency properly
-$(OUT)/decode.o: $(GDBSTUB_LIB)
 OBJS_EXT += gdbstub.o breakpoint.o
 CFLAGS += -D'GDBSTUB_COMM="$(GDBSTUB_COMM)"'
 LDFLAGS += $(GDBSTUB_LIB) -pthread
@@ -219,6 +217,10 @@ ifeq ($(call has, EXT_F), 1)
 $(OBJS): $(SOFTFLOAT_LIB)
 endif
 
+ifeq ($(call has, GDBSTUB), 1)
+$(OBJS): $(GDBSTUB_LIB)
+endif
+
 $(OUT)/%.o: src/%.c $(deps_emcc)
 	$(VECHO) "  CC\t$@\n"
 	$(Q)$(CC) -o $@ $(CFLAGS) $(CFLAGS_emcc) -c -MMD -MF $@.d $<
@@ -256,7 +258,7 @@ EXPECTED_fcalc = Performed 12 tests, 0 failures, 100% success rate.
 EXPECTED_pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086
 
 check-hello: $(BIN)
-	$(Q)$(PRINTF) "Running hello.elf ..."; \
+	$(Q)$(PRINTF) "Running hello.elf ... "; \
 	    if [ "$(shell $(BIN) $(OUT)/hello.elf | uniq)" = "$(strip $(EXPECTED_hello)) inferior exit code 0" ]; then \
 	    $(call notice, [OK]); \
 	    else \
